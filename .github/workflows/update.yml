@@ -13,9 +13,14 @@ on:
           - minor
           - none
 
+concurrency:
+  group: bump-release
+  cancel-in-progress: false
+
 jobs:
   bump-and-release:
-    permissions: write-all
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
 
     steps:
@@ -64,7 +69,15 @@ jobs:
             fi
             local s e
             s=$(grep -n "<string-array name=\"${array_name}\">" "$FILE" | cut -d: -f1 | head -1)
+            if [ -z "$s" ]; then
+              echo "::error::Could not find string-array '${array_name}' in $FILE"
+              exit 1
+            fi
             e=$(tail -n +"$s" "$FILE" | grep -n "</string-array>" | cut -d: -f1 | head -1)
+            if [ -z "$e" ]; then
+              echo "::error::Could not find closing </string-array> for '${array_name}' in $FILE"
+              exit 1
+            fi
             e=$((s+e-1))
             sed -i "${e}i\\        <item>${ITEM}</item>" "$FILE"
           }
@@ -89,8 +102,6 @@ jobs:
             exit 1
           fi
 
-          # Extract only the numeric X.Y.Z version, regardless of what follows
-          # the closing quote (e.g. "1.7.0 (${gitHash})" or "1.7.0 ($gitHash)").
           CUR_NAME=$(grep -oP 'versionName\s*=\s*"\K[0-9]+\.[0-9]+\.[0-9]+' "$FILE" | head -1)
           if [ -z "$CUR_NAME" ]; then
             echo "::error::Failed to parse current versionName from $FILE"
@@ -112,16 +123,12 @@ jobs:
 
           NEW_NAME="$MAJ.$MIN.$PATCH"
 
-          # Sanity check before mutating files / creating a release tag.
           if ! [[ "$NEW_NAME" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "::error::Computed invalid new version name: '$NEW_NAME'"
             exit 1
           fi
 
           sed -i "s/versionCode = ${CUR_CODE}/versionCode = ${NEW_CODE}/" "$FILE"
-
-          # Replace only the numeric part of versionName, keeping whatever
-          # suffix (e.g. " (${gitHash})" or " ($gitHash)") already follows it.
           sed -i "s/versionName = \"${CUR_NAME}/versionName = \"${NEW_NAME}/" "$FILE"
 
           echo "new_name=$NEW_NAME" >> "$GITHUB_OUTPUT"
@@ -135,11 +142,23 @@ jobs:
 
       - name: Commit
         run: |
+          set -e
           git config user.name github-actions[bot]
           git config user.email github-actions[bot]@users.noreply.github.com
           git add app/src/main/res/values/arrays.xml app/build.gradle.kts
           git commit -m "chore: support WA ${{ steps.wa.outputs.prefix }} / bump to ${{ steps.bumpver.outputs.new_name }}" || exit 0
-          git push
+
+          for i in 1 2 3 4 5; do
+            git fetch origin master
+            if git rebase origin/master; then
+              break
+            fi
+            echo "::warning::Rebase failed, aborting and retrying ($i)"
+            git rebase --abort
+            sleep $((RANDOM % 5 + 1))
+          done
+
+          git push origin HEAD:master
 
       - uses: actions/setup-java@v5
         with:
