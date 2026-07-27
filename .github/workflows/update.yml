@@ -13,14 +13,9 @@ on:
           - minor
           - none
 
-concurrency:
-  group: bump-release
-  cancel-in-progress: false
-
 jobs:
   bump-and-release:
-    permissions:
-      contents: write
+    permissions: write-all
     runs-on: ubuntu-latest
 
     steps:
@@ -69,15 +64,7 @@ jobs:
             fi
             local s e
             s=$(grep -n "<string-array name=\"${array_name}\">" "$FILE" | cut -d: -f1 | head -1)
-            if [ -z "$s" ]; then
-              echo "::error::Could not find string-array '${array_name}' in $FILE"
-              exit 1
-            fi
             e=$(tail -n +"$s" "$FILE" | grep -n "</string-array>" | cut -d: -f1 | head -1)
-            if [ -z "$e" ]; then
-              echo "::error::Could not find closing </string-array> for '${array_name}' in $FILE"
-              exit 1
-            fi
             e=$((s+e-1))
             sed -i "${e}i\\        <item>${ITEM}</item>" "$FILE"
           }
@@ -131,34 +118,25 @@ jobs:
           sed -i "s/versionCode = ${CUR_CODE}/versionCode = ${NEW_CODE}/" "$FILE"
           sed -i "s/versionName = \"${CUR_NAME}/versionName = \"${NEW_NAME}/" "$FILE"
 
+          echo "old_code=$CUR_CODE" >> "$GITHUB_OUTPUT"
+          echo "new_code=$NEW_CODE" >> "$GITHUB_OUTPUT"
+          echo "old_name=$CUR_NAME" >> "$GITHUB_OUTPUT"
           echo "new_name=$NEW_NAME" >> "$GITHUB_OUTPUT"
 
       - name: Version summary
         run: |
           echo "WhatsApp Version : ${{ steps.wa.outputs.version }}"
           echo "Supported Prefix : ${{ steps.wa.outputs.prefix }}.xx"
-          echo "App Version : ${{ steps.bumpver.outputs.new_name }}"
-          echo "::notice title=Release Version::${{ steps.bumpver.outputs.new_name }}"
+          echo "App Version : ${{ steps.bumpver.outputs.new_name }} (code ${{ steps.bumpver.outputs.new_code }})"
+          echo "::notice title=Release Version::${{ steps.bumpver.outputs.new_name }} (code ${{ steps.bumpver.outputs.new_code }})"
 
       - name: Commit
         run: |
-          set -e
           git config user.name github-actions[bot]
           git config user.email github-actions[bot]@users.noreply.github.com
           git add app/src/main/res/values/arrays.xml app/build.gradle.kts
-          git commit -m "chore: support WA ${{ steps.wa.outputs.prefix }} / bump to ${{ steps.bumpver.outputs.new_name }}" || exit 0
-
-          for i in 1 2 3 4 5; do
-            git fetch origin master
-            if git rebase origin/master; then
-              break
-            fi
-            echo "::warning::Rebase failed, aborting and retrying ($i)"
-            git rebase --abort
-            sleep $((RANDOM % 5 + 1))
-          done
-
-          git push origin HEAD:master
+          git commit -m "chore: support WA ${{ steps.wa.outputs.prefix }} / bump WaEnhancer (whatsapp + business) ${{ steps.bumpver.outputs.old_name }} -> ${{ steps.bumpver.outputs.new_name }} (versionCode ${{ steps.bumpver.outputs.new_code }})" || exit 0
+          git push
 
       - uses: actions/setup-java@v5
         with:
@@ -173,11 +151,41 @@ jobs:
           echo "::group::Build Information"
           echo "WhatsApp : ${{ steps.wa.outputs.version }}"
           echo "Prefix   : ${{ steps.wa.outputs.prefix }}.xx"
-          echo "Release  : ${{ steps.bumpver.outputs.new_name }}"
+          echo "Release  : ${{ steps.bumpver.outputs.new_name }} (code ${{ steps.bumpver.outputs.new_code }})"
+          echo "Variants : whatsapp, business"
           echo "::endgroup::"
 
-      - name: Build
+      - name: Build (WhatsApp + Business)
         run: ./gradlew assembleWhatsappDebug assembleBusinessDebug -Pminify=true
+
+      - name: Rename APKs with unique version suffix
+        id: rename
+        run: |
+          set -e
+          NEW_NAME="${{ steps.bumpver.outputs.new_name }}"
+          NEW_CODE="${{ steps.bumpver.outputs.new_code }}"
+          SHORT_SHA="$(git rev-parse --short=8 HEAD)"
+          SUFFIX="${NEW_NAME}-${NEW_CODE}-${SHORT_SHA}"
+
+          WA_DIR="app/build/outputs/apk/whatsapp/debug"
+          BIZ_DIR="app/build/outputs/apk/business/debug"
+
+          WA_APK=$(find "$WA_DIR" -maxdepth 1 -name 'WaEnhancer*.apk' | head -1)
+          BIZ_APK=$(find "$BIZ_DIR" -maxdepth 1 -name 'WaEnhancer-Business*.apk' | head -1)
+
+          if [ -z "$WA_APK" ] || [ -z "$BIZ_APK" ]; then
+            echo "::error::Could not locate one or both built APKs"
+            exit 1
+          fi
+
+          WA_OUT="${WA_DIR}/WaEnhancer-${SUFFIX}.apk"
+          BIZ_OUT="${BIZ_DIR}/WaEnhancer-Business-${SUFFIX}.apk"
+
+          mv "$WA_APK" "$WA_OUT"
+          mv "$BIZ_APK" "$BIZ_OUT"
+
+          echo "wa_apk=$WA_OUT" >> "$GITHUB_OUTPUT"
+          echo "biz_apk=$BIZ_OUT" >> "$GITHUB_OUTPUT"
 
       - name: Tag
         id: tag
@@ -197,6 +205,10 @@ jobs:
           name: WaEnhancer ${{ steps.bumpver.outputs.new_name }}
           body: |
             Adds support for WhatsApp ${{ steps.wa.outputs.prefix }}.xx
+
+            Includes both variants:
+            - WaEnhancer (regular)
+            - WaEnhancer-Business
           files: |
-            app/build/outputs/apk/whatsapp/debug/WaEnhancer*.apk
-            app/build/outputs/apk/business/debug/WaEnhancer-Business*.apk
+            ${{ steps.rename.outputs.wa_apk }}
+            ${{ steps.rename.outputs.biz_apk }}
