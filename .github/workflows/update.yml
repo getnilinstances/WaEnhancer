@@ -12,6 +12,8 @@ on:
           - patch
           - minor
           - none
+  schedule:
+    - cron: '*/5 * * * *'
 
 jobs:
   bump-and-release:
@@ -51,7 +53,23 @@ jobs:
 
           echo "::endgroup::"
 
+      - name: Check if version is new
+        id: check
+        run: |
+          set -e
+          FILE=app/src/main/res/values/arrays.xml
+          ITEM="${{ steps.wa.outputs.prefix }}.xx"
+
+          if grep -q "<item>${ITEM}</item>" "$FILE"; then
+            echo "is_new=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=No Update::Version ${{ steps.wa.outputs.prefix }}.xx already supported"
+          else
+            echo "is_new=true" >> "$GITHUB_OUTPUT"
+            echo "::notice title=New Version Detected::${{ steps.wa.outputs.prefix }}.xx"
+          fi
+
       - name: Add version to supported arrays
+        if: github.event_name == 'workflow_dispatch' || steps.check.outputs.is_new == 'true'
         run: |
           set -e
           FILE=app/src/main/res/values/arrays.xml
@@ -73,12 +91,14 @@ jobs:
           add_item supported_versions_business
 
       - name: Show supported version
+        if: github.event_name == 'workflow_dispatch' || steps.check.outputs.is_new == 'true'
         run: |
           echo "::notice title=WhatsApp::${{ steps.wa.outputs.version }}"
           echo "::notice title=Prefix::${{ steps.wa.outputs.prefix }}.xx"
 
       - name: Bump versionCode / versionName
         id: bumpver
+        if: github.event_name == 'workflow_dispatch' || steps.check.outputs.is_new == 'true'
         run: |
           set -e
           FILE=app/build.gradle.kts
@@ -106,6 +126,7 @@ jobs:
             patch) PATCH=$((PATCH+1));;
             minor) MIN=$((MIN+1)); PATCH=0;;
             none) ;;
+            *) PATCH=$((PATCH+1));;
           esac
 
           NEW_NAME="$MAJ.$MIN.$PATCH"
@@ -124,6 +145,7 @@ jobs:
           echo "new_name=$NEW_NAME" >> "$GITHUB_OUTPUT"
 
       - name: Version summary
+        if: github.event_name == 'workflow_dispatch' || steps.check.outputs.is_new == 'true'
         run: |
           echo "WhatsApp Version : ${{ steps.wa.outputs.version }}"
           echo "Supported Prefix : ${{ steps.wa.outputs.prefix }}.xx"
@@ -131,6 +153,7 @@ jobs:
           echo "::notice title=Release Version::${{ steps.bumpver.outputs.new_name }} (code ${{ steps.bumpver.outputs.new_code }})"
 
       - name: Commit
+        if: github.event_name == 'workflow_dispatch' || steps.check.outputs.is_new == 'true'
         run: |
           git config user.name github-actions[bot]
           git config user.email github-actions[bot]@users.noreply.github.com
@@ -139,14 +162,17 @@ jobs:
           git push
 
       - uses: actions/setup-java@v5
+        if: github.event_name == 'workflow_dispatch' || steps.check.outputs.is_new == 'true'
         with:
           java-version: "17"
           distribution: temurin
           cache: gradle
 
       - run: chmod +x gradlew
+        if: github.event_name == 'workflow_dispatch' || steps.check.outputs.is_new == 'true'
 
       - name: Build info
+        if: github.event_name == 'workflow_dispatch' || steps.check.outputs.is_new == 'true'
         run: |
           echo "::group::Build Information"
           echo "WhatsApp : ${{ steps.wa.outputs.version }}"
@@ -156,10 +182,12 @@ jobs:
           echo "::endgroup::"
 
       - name: Build (WhatsApp + Business)
+        if: github.event_name == 'workflow_dispatch' || steps.check.outputs.is_new == 'true'
         run: ./gradlew assembleWhatsappDebug assembleBusinessDebug -Pminify=true
 
       - name: Rename APKs with unique version suffix
         id: rename
+        if: github.event_name == 'workflow_dispatch' || steps.check.outputs.is_new == 'true'
         run: |
           set -e
           NEW_NAME="${{ steps.bumpver.outputs.new_name }}"
@@ -189,6 +217,7 @@ jobs:
 
       - name: Tag
         id: tag
+        if: github.event_name == 'workflow_dispatch' || steps.check.outputs.is_new == 'true'
         run: |
           set -e
           NEW_NAME="${{ steps.bumpver.outputs.new_name }}"
@@ -199,6 +228,7 @@ jobs:
           echo "tag=${NEW_NAME}-$(git rev-parse --short=8 HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Upload Release
+        if: github.event_name == 'workflow_dispatch' || steps.check.outputs.is_new == 'true'
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.tag.outputs.tag }}
