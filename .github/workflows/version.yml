@@ -24,12 +24,60 @@ jobs:
           VERSION="${{ inputs.version }}.xx"
           FILE="app/src/main/res/values/arrays.xml"
 
-          sed -i "/<\/string-array>/i\\        <item>$VERSION</item>" "$FILE"
+          python3 - "$FILE" "$VERSION" <<'PY'
+          import sys
+          import re
+
+          file = sys.argv[1]
+          version = sys.argv[2]
+
+          with open(file, "r", encoding="utf-8") as f:
+              content = f.read()
+
+          arrays = [
+              "supported_versions_wpp",
+              "supported_versions_business"
+          ]
+
+          for array_name in arrays:
+              pattern = (
+                  rf'(<string-array name="{array_name}">)'
+                  rf'(.*?)'
+                  rf'(</string-array>)'
+              )
+
+              def update(match):
+                  opening = match.group(1)
+                  body = match.group(2)
+                  closing = match.group(3)
+
+                  if f"<item>{version}</item>" not in body:
+                      body = body.rstrip() + f"\n        <item>{version}</item>\n    "
+
+                  return opening + body + closing
+
+              content, count = re.subn(
+                  pattern,
+                  update,
+                  content,
+                  count=1,
+                  flags=re.DOTALL
+              )
+
+              if count == 0:
+                  raise SystemExit(
+                      f"Array '{array_name}' was not found"
+                  )
+
+          with open(file, "w", encoding="utf-8") as f:
+              f.write(content)
+          PY
 
       - name: Commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .
-          git commit -m "Add version ${{ inputs.version }}" || exit 0
+          git add app/src/main/res/values/arrays.xml
+          git diff --cached --quiet && exit 0
+          git commit -m "Add version ${{ inputs.version }}"
           git push
