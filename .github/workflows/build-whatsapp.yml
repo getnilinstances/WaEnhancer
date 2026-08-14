@@ -2,6 +2,9 @@ name: Build WhatsApp
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - 'app/src/main/res/values/arrays.xml'
 
 jobs:
   build:
