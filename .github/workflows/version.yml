@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version"
+        description: "WhatsApp version (e.g. 2.26.33)"
         required: true
 
 permissions:
@@ -19,12 +19,13 @@ jobs:
         with:
           token: ${{ secrets.PAT }}
 
-      - name: Add version
+      - name: Update versions
         run: |
-          VERSION="${{ inputs.version }}.xx"
+          VERSION="${{ inputs.version }}"
+          WA_VERSION="${VERSION}.xx"
           FILE="app/src/main/res/values/arrays.xml"
 
-          python3 - "$FILE" "$VERSION" <<'PY'
+          python3 - "$FILE" "$WA_VERSION" <<'PY'
           import sys
           import re
 
@@ -52,7 +53,8 @@ jobs:
                   closing = match.group(3)
 
                   if f"<item>{version}</item>" not in body:
-                      body = body.rstrip() + f"\n        <item>{version}</item>\n    "
+                      body = body.rstrip()
+                      body += f"\n        <item>{version}</item>\n    "
 
                   return opening + body + closing
 
@@ -73,11 +75,46 @@ jobs:
               f.write(content)
           PY
 
+      - name: Update app version
+        run: |
+          FILE="app/build.gradle.kts"
+          VERSION="${{ inputs.version }}"
+
+          CURRENT_CODE=$(grep -oP 'versionCode\s*=\s*\K[0-9]+' "$FILE" | head -1)
+
+          if [ -z "$CURRENT_CODE" ]; then
+            echo "Could not find versionCode"
+            exit 1
+          fi
+
+          NEW_CODE=$((CURRENT_CODE + 1))
+
+          sed -i -E \
+            "s/versionCode = [0-9]+/versionCode = $NEW_CODE/" \
+            "$FILE"
+
+          sed -i -E \
+            "s/versionName = \"[0-9]+\.[0-9]+\.[0-9]+ \(\$gitHash\)\"/versionName = \"$VERSION (\$gitHash)\"/" \
+            "$FILE"
+
+          sed -i -E \
+            's/outputFileName\.set\("\$appName-[0-9]+\.[0-9]+\.[0-9]+ \(\$gitHash\)\.apk"\)/outputFileName.set("\$appName-'$VERSION' (\$gitHash).apk")/' \
+            "$FILE"
+
+          echo "Updated:"
+          grep -E 'versionCode|versionName|outputFileName' "$FILE"
+
       - name: Commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app/src/main/res/values/arrays.xml
-          git diff --cached --quiet && exit 0
-          git commit -m "Add version ${{ inputs.version }}"
+
+          git add app/src/main/res/values/arrays.xml app/build.gradle.kts
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+
+          git commit -m "Update version ${{ inputs.version }}"
           git push
