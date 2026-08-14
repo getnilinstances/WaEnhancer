@@ -1,0 +1,30 @@
+name: Add Ver
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version"
+        required: true
+
+jobs:
+  add-version:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Add version
+        run: |
+          VERSION="${{ inputs.version }}.xx"
+          FILE="app/src/main/res/values/arrays.xml"
+
+          sed -i "/<\/string-array>/i\\        <item>$VERSION</item>" "$FILE"
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Add version ${{ inputs.version }}" || exit 0
+          git push
