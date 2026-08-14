@@ -3,9 +3,10 @@ name: Build Business
 on:
   workflow_dispatch:
   push:
+    branches:
+      - master
     paths:
-      - 'app/src/main/res/values/arrays.xml'
-      
+      - 'app/src/main/res/values/arrays.xml'      
 jobs:
   build:
     permissions: write-all
