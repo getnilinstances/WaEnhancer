@@ -2,7 +2,10 @@ name: Build Business
 
 on:
   workflow_dispatch:
-
+  push:
+    paths:
+      - 'app/src/main/res/values/arrays.xml'
+      
 jobs:
   build:
     permissions: write-all
