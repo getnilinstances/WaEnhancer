@@ -8,6 +8,7 @@
         <item>2.26.29.xx</item>
         <item>2.26.30.xx</item>
         <item>2.26.31.xx</item>
+        <item>2.26.31.xx</item>
     </string-array>
     <string-array name="supported_versions_business">
         <item>2.26.25.xx</item>
@@ -17,12 +18,14 @@
         <item>2.26.29.xx</item>
         <item>2.26.30.xx</item>
         <item>2.26.31.xx</item>
+        <item>2.26.31.xx</item>
     </string-array>
 
     <string-array name="scope">
         <item>com.whatsapp</item>
         <item>com.whatsapp.w4b</item>
         <item>android</item>
+        <item>2.26.31.xx</item>
         <item>2.26.31.xx</item>
     </string-array>
 
@@ -32,11 +35,13 @@
         <item>@string/antirevoke_buttons_show_text</item>
         <item>@string/antirevoke_buttons_show_icon</item>
         <item>2.26.31.xx</item>
+        <item>2.26.31.xx</item>
     </string-array>
     <string-array name="antirevoke_values">
         <item>0</item>
         <item>1</item>
         <item>2</item>
+        <item>2.26.31.xx</item>
         <item>2.26.31.xx</item>
     </string-array>
 
@@ -46,12 +51,14 @@
         <item>@string/click_times</item>
         <item>@string/hold_title</item>
         <item>2.26.31.xx</item>
+        <item>2.26.31.xx</item>
     </string-array>
 
     <string-array name="archive_values">
         <item>0</item>
         <item>1</item>
         <item>2</item>
+        <item>2.26.31.xx</item>
         <item>2.26.31.xx</item>
     </string-array>
 
@@ -63,6 +70,7 @@
         <item>Status Vertical (Circle)</item>
         <item>Status Vertical (Square)</item>
         <item>2.26.31.xx</item>
+        <item>2.26.31.xx</item>
     </string-array>
 
     <string-array name="status_style_values">
@@ -73,6 +81,7 @@
         <item>3</item>
         <item>9</item>
         <item>2.26.31.xx</item>
+        <item>2.26.31.xx</item>
     </string-array>
 
     <string-array name="tabshide_contents">
@@ -81,6 +90,7 @@
         <item>@string/calls</item>
         <item>@string/tools</item>
         <item>2.26.31.xx</item>
+        <item>2.26.31.xx</item>
     </string-array>
     <string-array name="tabshide_values">
         <item>300</item>
@@ -88,11 +98,13 @@
         <item>400</item>
         <item>700</item>
         <item>2.26.31.xx</item>
+        <item>2.26.31.xx</item>
     </string-array>
     <string-array name="thememode_entries">
         <item>@string/follow_system</item>
         <item>@string/dark_theme_on</item>
         <item>@string/dark_theme_off</item>
+        <item>2.26.31.xx</item>
         <item>2.26.31.xx</item>
     </string-array>
     <string-array name="thememode_values">
@@ -100,25 +112,30 @@
         <item>1</item>
         <item>2</item>
         <item>2.26.31.xx</item>
+        <item>2.26.31.xx</item>
     </string-array>
     <string-array name="changecolor_mode_entries">
         <item>@string/changecolor_mode_manual</item>
         <item>@string/changecolor_mode_monet</item>
+        <item>2.26.31.xx</item>
         <item>2.26.31.xx</item>
     </string-array>
     <string-array name="changecolor_mode_values">
         <item>manual</item>
         <item>monet</item>
         <item>2.26.31.xx</item>
+        <item>2.26.31.xx</item>
     </string-array>
     <string-array name="wae_color_mode_entries">
         <item>@string/wae_color_mode_preset</item>
         <item>@string/wae_color_mode_auto_monet</item>
         <item>2.26.31.xx</item>
+        <item>2.26.31.xx</item>
     </string-array>
     <string-array name="wae_color_mode_values">
         <item>preset</item>
         <item>monet</item>
+        <item>2.26.31.xx</item>
         <item>2.26.31.xx</item>
     </string-array>
     <string-array name="wae_color_preset_entries">
@@ -130,6 +147,7 @@
         <item>@string/color_preset_red</item>
         <item>@string/color_preset_pink</item>
         <item>2.26.31.xx</item>
+        <item>2.26.31.xx</item>
     </string-array>
     <string-array name="wae_color_preset_values">
         <item>green</item>
@@ -140,17 +158,20 @@
         <item>red</item>
         <item>pink</item>
         <item>2.26.31.xx</item>
+        <item>2.26.31.xx</item>
     </string-array>
     <string-array name="chatfilter_buttons">
         <item>@string/chatfilter_no_search</item>
         <item>@string/chatfilter_search_icon</item>
         <item>@string/chatfilter_search_bar</item>
         <item>2.26.31.xx</item>
+        <item>2.26.31.xx</item>
     </string-array>
     <string-array name="chatfilter_values">
         <item>0</item>
         <item>1</item>
         <item>2</item>
+        <item>2.26.31.xx</item>
         <item>2.26.31.xx</item>
     </string-array>
     <string-array name="call_blocker_buttons">
@@ -160,6 +181,7 @@
         <item>@string/contact_block_list</item>
         <item>@string/contact_white_list</item>
         <item>2.26.31.xx</item>
+        <item>2.26.31.xx</item>
     </string-array>
     <string-array name="call_blocker_values">
         <item>0</item>
@@ -168,12 +190,14 @@
         <item>3</item>
         <item>4</item>
         <item>2.26.31.xx</item>
+        <item>2.26.31.xx</item>
     </string-array>
     <string-array name="call_type_buttons">
         <item>@string/call_type_buttons_no_internet</item>
         <item>@string/call_type_buttons_busy</item>
         <item>@string/call_type_buttons_ended</item>
         <item>@string/call_type_buttons_uncallable</item>
+        <item>2.26.31.xx</item>
         <item>2.26.31.xx</item>
     </string-array>
 
@@ -183,6 +207,7 @@
         <item>ended</item>
         <item>uncallable</item>
         <item>2.26.31.xx</item>
+        <item>2.26.31.xx</item>
     </string-array>
 
     <string-array name="seentick_buttons">
@@ -190,16 +215,19 @@
         <item>@string/seentick_screen</item>
         <item>@string/seentick_menu</item>
         <item>2.26.31.xx</item>
+        <item>2.26.31.xx</item>
     </string-array>
     <string-array name="seentick_values">
         <item>0</item>
         <item>1</item>
         <item>2</item>
         <item>2.26.31.xx</item>
+        <item>2.26.31.xx</item>
     </string-array>
 
     <string-array name="image_picker">
         <item>image/*</item>
+        <item>2.26.31.xx</item>
         <item>2.26.31.xx</item>
     </string-array>
     <string-array name="audio_type_values">
@@ -207,21 +235,25 @@
         <item>1</item>
         <item>2</item>
         <item>2.26.31.xx</item>
+        <item>2.26.31.xx</item>
     </string-array>
     <string-array name="audio_type_buttons">
         <item>@string/standard</item>
         <item>@string/audio_note</item>
         <item>@string/voice_note</item>
         <item>2.26.31.xx</item>
+        <item>2.26.31.xx</item>
     </string-array>
     <string-array name="transcription_provider_entries">
         <item>AssemblyAI</item>
         <item>Groq AI (Whisper v3 Turbo)</item>
         <item>2.26.31.xx</item>
+        <item>2.26.31.xx</item>
     </string-array>
     <string-array name="transcription_provider_values">
         <item>assemblyai</item>
         <item>groq</item>
+        <item>2.26.31.xx</item>
         <item>2.26.31.xx</item>
     </string-array>
     <string-array name="animations_values">
@@ -237,6 +269,7 @@
         <item>flip</item>
         <item>hyperspace_out</item>
         <item>2.26.31.xx</item>
+        <item>2.26.31.xx</item>
     </string-array>
     <string-array name="animations_names">
         <item>Default</item>
@@ -251,11 +284,13 @@
         <item>Flip</item>
         <item>Hyperspace out</item>
         <item>2.26.31.xx</item>
+        <item>2.26.31.xx</item>
     </string-array>
     <string-array name="custom_privacy_entries">
         <item>@string/antirevoke_buttons_desable</item>
         <item>@string/show_contact_info</item>
         <item>@string/show_contact_info_menu</item>
+        <item>2.26.31.xx</item>
         <item>2.26.31.xx</item>
     </string-array>
     <string-array name="custom_privacy_values">
@@ -263,11 +298,13 @@
         <item>1</item>
         <item>2</item>
         <item>2.26.31.xx</item>
+        <item>2.26.31.xx</item>
     </string-array>
     <string-array name="configui_entries">
         <item>@string/configui_mode_default</item>
         <item>@string/configui_mode_toolbar_photo</item>
         <item>@string/configui_mode_you_tab</item>
+        <item>2.26.31.xx</item>
         <item>2.26.31.xx</item>
     </string-array>
 
@@ -275,6 +312,7 @@
         <item>0</item>
         <item>2</item>
         <item>6</item>
+        <item>2.26.31.xx</item>
         <item>2.26.31.xx</item>
     </string-array>
 </resources>
