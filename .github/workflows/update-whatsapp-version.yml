@@ -1,0 +1,128 @@
+name: Update WhatsApp Version
+
+on:
+  schedule:
+    # Run daily at 08:00 UTC
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'WhatsApp version to target (e.g. 2.25.10.75). Leave empty to fetch latest automatically.'
+        required: false
+        default: ''
+
+jobs:
+  update-version:
+    permissions: write-all
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Fetch latest WhatsApp version
+        id: wa_version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            WA_VERSION="${{ github.event.inputs.version }}"
+            echo "Using manually provided version: $WA_VERSION"
+          else
+            echo "Fetching latest WhatsApp version from APKMirror..."
+            # Scrape APKMirror for the latest stable WhatsApp arm64 release
+            WA_VERSION=$(curl -sSL \
+              -H "User-Agent: Mozilla/5.0 (Linux; Android 12; Pixel 6) AppleWebKit/537.36" \
+              "https://www.apkmirror.com/apk/whatsapp-inc/whatsapp/" \
+              | grep -oP 'WhatsApp \K[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' \
+              | head -1)
+            if [ -z "$WA_VERSION" ]; then
+              echo "Could not fetch WhatsApp version automatically."
+              exit 1
+            fi
+            echo "Latest WhatsApp version: $WA_VERSION"
+          fi
+          echo "version=$WA_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Read current version from gradle.properties
+        id: current_version
+        run: |
+          CURRENT=$(grep -oP 'whatsappTargetVersion=\K.*' gradle.properties || echo "")
+          echo "current=$CURRENT" >> $GITHUB_OUTPUT
+
+      - name: Check if update is needed
+        id: check
+        run: |
+          NEW="${{ steps.wa_version.outputs.version }}"
+          CURRENT="${{ steps.current_version.outputs.current }}"
+          if [ "$NEW" = "$CURRENT" ]; then
+            echo "Version is already up to date ($CURRENT). Nothing to do."
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "Version changed: $CURRENT -> $NEW"
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update whatsappTargetVersion in gradle.properties
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          NEW="${{ steps.wa_version.outputs.version }}"
+          if grep -q "whatsappTargetVersion=" gradle.properties; then
+            sed -i "s/whatsappTargetVersion=.*/whatsappTargetVersion=$NEW/" gradle.properties
+          else
+            echo "whatsappTargetVersion=$NEW" >> gradle.properties
+          fi
+          echo "Updated gradle.properties with whatsappTargetVersion=$NEW"
+
+      - name: set up JDK 17
+        if: steps.check.outputs.changed == 'true'
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+          cache-dependency-path: |
+            **/*.gradle*
+            **/gradle-wrapper.properties
+            gradle/libs.versions.toml
+            **/gradle.properties
+
+      - name: Write signing key
+        if: steps.check.outputs.changed == 'true'
+        env:
+          KEY_STORE: ${{ secrets.KEY_STORE }}
+        run: |
+          if [ -z "$KEY_STORE" ]; then
+            echo "::error::KEY_STORE secret is not set. A persistent keystore is required so the APK can be updated without uninstalling. See docs/SIGNING.md for setup instructions."
+            exit 1
+          fi
+          echo androidStorePassword='${{ secrets.KEY_STORE_PASSWORD }}' >> gradle.properties
+          echo androidKeyAlias='${{ secrets.ALIAS }}' >> gradle.properties
+          echo androidKeyPassword='${{ secrets.KEY_PASSWORD }}' >> gradle.properties
+          echo androidStoreFile='key.jks' >> gradle.properties
+          echo "$KEY_STORE" | base64 --decode > key.jks
+
+      - name: Grant execute permission for gradlew
+        if: steps.check.outputs.changed == 'true'
+        run: chmod +x gradlew
+
+      - name: Build WhatsApp Release
+        if: steps.check.outputs.changed == 'true'
+        run: ./gradlew assembleWhatsappDebug -Pminify=true
+
+      - name: Upload APK artifact
+        if: steps.check.outputs.changed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: WaEnhancer-wa${{ steps.wa_version.outputs.version }}
+          path: app/build/outputs/apk/whatsapp/debug/WaEnhancer*.apk
+          retention-days: 14
+
+      - name: Commit updated gradle.properties
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add gradle.properties
+          git commit -m "chore: update WhatsApp target version to ${{ steps.wa_version.outputs.version }}"
+          git push
