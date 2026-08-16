@@ -8,7 +8,10 @@
         <item>2.26.29.xx</item>
         <item>2.26.30.xx</item>
         <item>2.26.31.xx</item>
+<<<<<<< HEAD
         <item>2.26.32.xx</item>
+=======
+>>>>>>> upstream/master
     </string-array>
 
     <string-array name="supported_versions_business">
@@ -19,7 +22,10 @@
         <item>2.26.29.xx</item>
         <item>2.26.30.xx</item>
         <item>2.26.31.xx</item>
+<<<<<<< HEAD
         <item>2.26.32.xx</item>
+=======
+>>>>>>> upstream/master
     </string-array>
 
     <string-array name="scope">
