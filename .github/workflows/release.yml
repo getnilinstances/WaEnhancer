@@ -2,6 +2,11 @@ name: Release
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - 'app/src/main/res/values/arrays.xml'
 
 jobs:
   release:
