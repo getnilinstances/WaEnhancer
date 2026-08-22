@@ -16,8 +16,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.PAT }}
 
       - name: Update versions
         run: |
@@ -25,55 +23,18 @@ jobs:
           WA_VERSION="${VERSION}.xx"
           FILE="app/src/main/res/values/arrays.xml"
 
-          python3 - "$FILE" "$WA_VERSION" <<'PY'
-          import sys
-          import re
+          for ARRAY in supported_versions_wpp supported_versions_business; do
+            if ! grep -q "<string-array name=\"$ARRAY\">" "$FILE"; then
+              echo "Array '$ARRAY' was not found"
+              exit 1
+            fi
 
-          file = sys.argv[1]
-          version = sys.argv[2]
-
-          with open(file, "r", encoding="utf-8") as f:
-              content = f.read()
-
-          arrays = [
-              "supported_versions_wpp",
-              "supported_versions_business"
-          ]
-
-          for array_name in arrays:
-              pattern = (
-                  rf'(<string-array name="{array_name}">)'
-                  rf'(.*?)'
-                  rf'(</string-array>)'
-              )
-
-              def update(match):
-                  opening = match.group(1)
-                  body = match.group(2)
-                  closing = match.group(3)
-
-                  if f"<item>{version}</item>" not in body:
-                      body = body.rstrip()
-                      body += f"\n        <item>{version}</item>\n    "
-
-                  return opening + body + closing
-
-              content, count = re.subn(
-                  pattern,
-                  update,
-                  content,
-                  count=1,
-                  flags=re.DOTALL
-              )
-
-              if count == 0:
-                  raise SystemExit(
-                      f"Array '{array_name}' was not found"
-                  )
-
-          with open(file, "w", encoding="utf-8") as f:
-              f.write(content)
-          PY
+            if ! sed -n "/<string-array name=\"$ARRAY\">/,/<\/string-array>/p" "$FILE" | grep -q "<item>$WA_VERSION</item>"; then
+              sed -i "/<string-array name=\"$ARRAY\">/,/<\/string-array>/{
+                /<\/string-array>/i\        <item>$WA_VERSION</item>
+              }" "$FILE"
+            fi
+          done
 
       - name: Update app version
         run: |
@@ -98,11 +59,8 @@ jobs:
             "$FILE"
 
           sed -i -E \
-            's/outputFileName\.set\("\$appName-[0-9]+\.[0-9]+\.[0-9]+ \(\$gitHash\)\.apk"\)/outputFileName.set("\$appName-'$VERSION' (\$gitHash).apk")/' \
+            "s/outputFileName\.set\(\"\$appName-[0-9]+\.[0-9]+\.[0-9]+ \(\$gitHash\)\.apk\"\)/outputFileName.set(\"\$appName-$VERSION (\$gitHash).apk\")/" \
             "$FILE"
-
-          echo "Updated:"
-          grep -E 'versionCode|versionName|outputFileName' "$FILE"
 
       - name: Commit
         run: |
