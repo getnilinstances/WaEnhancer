@@ -272,11 +272,3 @@
         <item>6</item>
     </string-array>
 </resources>
-
-Setelah replace file-nya:
-
-git add app/src/main/res/values/arrays.xml
-git commit -m "Resolve arrays.xml merge conflict"
-git push origin master
-
-Kalau "git status" masih menunjukkan file conflict lain, jangan commit dulu—kirim output "git status" ke sini dan gue bantu resolve satu-satu
